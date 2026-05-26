@@ -1,0 +1,36 @@
+# SmartSoil+ | netlify.toml
+# ─────────────────────────────────────────────────────────────────
+# Netlify deployment configuration
+# No build step needed — pure static HTML/CSS/JS
+# ─────────────────────────────────────────────────────────────────
+
+[build]
+  publish = "."       # serve from root of repo
+  command = ""        # no build command — static files only
+
+# ── HEADERS ───────────────────────────────────────────────────────
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "SAMEORIGIN"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    # Cache static JS/CSS aggressively, HTML never
+    Cache-Control          = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# ── REDIRECTS ─────────────────────────────────────────────────────
+# SPA fallback — all routes serve index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0E1A11">
+<meta name="description" content="SmartSoil+ — Intelligent Soil-Water Platform for Tanzanian Agriculture">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SmartSoil+ | Intelligent Soil-Water Platform</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="notif-container" aria-live="polite" aria-atomic="true"></div>
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<div class="app">
+
+<!-- ═══════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════ -->
+<nav class="sidebar" id="sidebar" aria-label="Main navigation">
+  <div class="sidebar-logo">
+    <div class="brand">SmartSoil<em>+</em></div>
+    <div class="brand-sub">Soil–Water Intelligence Platform</div>
+  </div>
+
+  <div class="mode-toggle" role="group" aria-label="Display mode">
+    <button class="mode-btn active" id="btn-expert" onclick="setMode('expert')" aria-pressed="true">🔬 <span data-tkey="mode_expert">Expert</span></button>
+    <button class="mode-btn"        id="btn-farmer" onclick="setMode('farmer')" aria-pressed="false">🌾 <span data-tkey="mode_farmer">Farmer</span></button>
+  </div>
+
+  <div class="lang-toggle" role="group" aria-label="Language selection">
+    <button class="lang-btn active" id="btn-en" onclick="setLang('en')" aria-label="English">🇬🇧 EN</button>
+    <button class="lang-btn"        id="btn-sw" onclick="setLang('sw')" aria-label="Kiswahili">🇹🇿 SW</button>
+  </div>
+
+  <div class="crop-selector">
+    <div class="crop-label" id="crop-label-text">SELECT CROP</div>
+    <div class="crop-tabs" role="group" aria-label="Crop selection">
+      <button class="crop-tab"        id="crop-maize"  onclick="setCrop('maize')"  aria-pressed="false"><span class="crop-emoji">🌽</span><span>Maize</span></button>
+      <button class="crop-tab active" id="crop-tomato" onclick="setCrop('tomato')" aria-pressed="true" ><span class="crop-emoji">🍅</span><span>Tomato</span></button>
+      <button class="crop-tab"        id="crop-onion"  onclick="setCrop('onion')"  aria-pressed="false"><span class="crop-emoji">🧅</span><span>Onion</span></button>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label" data-tkey="nav_monitor">MONITOR</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)" role="button" tabindex="0" aria-current="page">
+      <span class="nav-icon">⬡</span><span data-tkey="nav_dashboard">Dashboard</span>
+    </div>
+    <div class="nav-item" onclick="showPage('sensors',this)" role="button" tabindex="0">
+      <span class="nav-icon">◈</span><span data-tkey="nav_sensors">Live Sensors</span>
+    </div>
+    <div class="nav-item" onclick="showPage('diagnostics',this)" role="button" tabindex="0">
+      <span class="nav-icon">◎</span><span data-tkey="nav_diagnostics">Diagnostics</span>
+      <span class="nav-badge" id="alert-nav-badge" aria-label="Alert count">0</span>
+    </div>
+
+    <div class="nav-section-label" data-tkey="nav_insights">INSIGHTS</div>
+    <div class="nav-item" onclick="showPage('sci',this)" role="button" tabindex="0">
+      <span class="nav-icon">◇</span><span data-tkey="nav_sci">Soil Capital Index</span>
+    </div>
+    <div class="nav-item" onclick="showPage('recommendations',this)" role="button" tabindex="0">
+      <span class="nav-icon">▷</span><span data-tkey="nav_recommendations">Recommendations</span>
+    </div>
+    <div class="nav-item" onclick="showPage('yield',this)" role="button" tabindex="0">
+      <span class="nav-icon">△</span><span data-tkey="nav_yield">Yield Analysis</span>
+    </div>
+    <div class="nav-item" onclick="showPage('climate',this)" role="button" tabindex="0">
+      <span class="nav-icon">☁</span><span data-tkey="nav_climate">Climate &amp; ET</span>
+    </div>
+
+    <div class="nav-section-label" data-tkey="nav_system">SYSTEM</div>
+    <div class="nav-item" onclick="showPage('architecture',this)" role="button" tabindex="0">
+      <span class="nav-icon">◉</span><span data-tkey="nav_architecture">Architecture</span>
+    </div>
+    <div class="nav-item" onclick="showPage('about',this)" role="button" tabindex="0">
+      <span class="nav-icon">○</span><span data-tkey="nav_about">About</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="status-dot"><span id="system-status-text">SYSTEM ONLINE</span></div>
+    <div style="font-family:var(--font-mono);font-size:8px;color:var(--mist);opacity:0.28;margin-top:3px;">UDSM Farm · Tanzania · v2.1 MVP</div>
+    <div class="proto-badge" style="margin-top:8px;">⚗ SIMULATION MODE</div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════
+     MAIN
+═══════════════════════════════════════════════ -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <header class="topbar" role="banner">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="toggleSidebar()" aria-label="Toggle navigation" aria-expanded="false" id="hamburger-btn">☰</button>
+      <div class="topbar-title" id="page-title">Dashboard</div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge" aria-label="Live simulation">LIVE</div>
+      <div class="plot-badge" id="plot-badge-top">🍅 Tomato — Plot A</div>
+      <div class="alert-badge" id="alert-badge" style="display:none;" role="status">0 ALERTS</div>
+      <div class="topbar-time" id="clock" aria-label="Current time"></div>
+    </div>
+  </header>
+
+  <main class="content" id="main-content">
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: DASHBOARD
+═══════════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+
+  <!-- FARMER VIEW -->
+  <div class="farmer-only" style="display:none;">
+    <div class="page-header">
+      <div>
+        <div class="page-header-title" data-tkey="nav_dashboard">Field Overview</div>
+        <div class="page-header-sub" id="dash-sub">PLOT A · UDSM · TOMATO</div>
+      </div>
+    </div>
+    <div id="farmer-cards-container"></div>
+  </div>
+
+  <!-- EXPERT VIEW -->
+  <div class="expert-only">
+    <div class="page-header">
+      <div>
+        <div class="page-header-title" data-tkey="nav_dashboard">Dashboard</div>
+        <div class="page-header-sub" id="dash-sub-expert">PLOT A · UDSM DEMO FARM · TOMATO</div>
+      </div>
+      <div class="header-actions">
+        <button class="sim-btn"        onclick="withLoading(this, triggerIrrigation)">💧 <span>Irrigate</span></button>
+        <button class="sim-btn warn"   onclick="withLoading(this, triggerDrought)">☀ <span>Drought</span></button>
+        <button class="sim-btn danger" onclick="withLoading(this, triggerOverwater)">⚠ <span>Over-water</span></button>
+      </div>
+    </div>
+
+    <!-- Prototype disclosure -->
+    <div class="proto-banner">
+      <div class="proto-banner-title" id="proto-title">PROTOTYPE SIMULATION MODE</div>
+      <div class="proto-banner-body"  id="proto-body">Rule-based agronomic simulation — not live sensor data. Scientifically modelled from FAO/CGIAR crop parameters. ESP32 integration planned for Phase 2.</div>
+    </div>
+
+    <!-- Crop context -->
+    <div class="crop-context-bar" id="crop-context-bar">
+      <div class="crop-context-icon" id="ctx-icon">🍅</div>
+      <div class="crop-context-info">
+        <div class="crop-context-name"   id="ctx-name">Tomato (TOM01)</div>
+        <div class="crop-context-detail" id="ctx-detail">Growth Stage: Fruit Set · Day 85 · Demand: 400–600mm</div>
+      </div>
+      <div class="crop-context-thresholds" id="ctx-thresholds"></div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="grid-4">
+      <div class="card status-ok" id="kpi-card-moisture">
+        <div class="card-icon">💧</div>
+        <div class="card-label" id="kpi-moisture-label">SOIL MOISTURE</div>
+        <div class="card-value" id="kpi-moisture" style="color:var(--leaf)">62<span style="font-size:18px;opacity:.5">%</span></div>
+        <div class="card-sub"   id="kpi-moisture-fc">62% of Field Capacity</div>
+        <div class="why-box">
+          <div class="why-label">Why this matters</div>
+          <span id="kpi-moisture-why-text">Loading…</span>
+        </div>
+      </div>
+
+      <div class="card" id="kpi-card-temp">
+        <div class="card-icon">🌡️</div>
+        <div class="card-label" data-tkey="kpi_temp">AIR TEMPERATURE</div>
+        <div class="card-value" id="kpi-temp" style="color:var(--amber)">28<span style="font-size:18px;opacity:.5">°C</span></div>
+        <div class="card-sub"   id="kpi-eti-label">ETI: Moderate Demand</div>
+        <div class="why-box">
+          <div class="why-label">Why this matters</div>
+          <span id="kpi-temp-why-text">Loading…</span>
+        </div>
+      </div>
+
+      <div class="card" id="kpi-card-sci">
+        <div class="card-icon">◆</div>
+        <div class="card-label" data-tkey="kpi_sci">SOIL CAPITAL INDEX</div>
+        <div class="card-value" id="kpi-sci" style="color:var(--amber)">61<span style="font-size:18px;opacity:.5">/100</span></div>
+        <div class="card-sub"   id="kpi-sci-label">MEDIUM · Improving</div>
+        <div class="why-box warning">
+          <div class="why-label">Why this matters</div>
+          <span id="sci-why-text">SCI at 61/100 — moderate water retention. Sustained irrigation improvement can reach HIGH (70+) this season.</span>
+        </div>
+      </div>
+
+      <div class="card status-warning" id="kpi-card-yield">
+        <div class="card-icon">📉</div>
+        <div class="card-label" data-tkey="kpi_yield">YIELD RISK</div>
+        <div class="card-value" id="kpi-yield-risk" style="color:var(--crimson)">14<span style="font-size:18px;opacity:.5">%</span></div>
+        <div class="card-sub"   id="kpi-yield-cause">Saturation stress</div>
+        <div class="why-box danger">
+          <div class="why-label">Risk explanation</div>
+          <span id="kpi-yield-why">Loading…</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chart + diagnostics -->
+    <div class="grid-21">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+          <div class="card-label">72-HOUR MOISTURE TREND</div>
+          <div class="chart-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--leaf)"></div>Moisture</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(245,166,35,0.6)"></div>Opt. range</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(224,52,52,0.5)"></div>Drought line</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:180px;"><canvas id="moisture-chart"></canvas></div>
+        <div class="why-box" style="margin-top:10px;">
+          <div class="why-label">Reading the trend</div>
+          The green line shows soil moisture over 72 hours. Dashed lines show the optimal range and drought threshold for your selected crop. Spikes upward = irrigation or rainfall events.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:12px;">ACTIVE DIAGNOSTICS</div>
+        <div id="dash-alerts"></div>
+      </div>
+    </div>
+
+    <!-- Sensor strip + SCI breakdown -->
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-label">LIVE SENSOR READINGS</div>
+        <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Soil Moisture A1</div><div class="sensor-loc">10cm depth</div></div><div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-m1" style="width:62%;background:var(--leaf)"></div></div><div class="sensor-val-wrap"><span class="sensor-val" id="sv-m1">62</span><span class="sensor-unit">%</span></div></div>
+        <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Soil Moisture A2</div><div class="sensor-loc">20cm depth</div></div><div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-m2" style="width:58%;background:var(--leaf)"></div></div><div class="sensor-val-wrap"><span class="sensor-val" id="sv-m2">58</span><span class="sensor-unit">%</span></div></div>
+        <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Soil Temperature</div><div class="sensor-loc">DS18B20</div></div><div class="sensor-bar-wrap"><div class="sensor-bar" style="width:50%;background:var(--amber)"></div></div><div class="sensor-val-wrap"><span class="sensor-val" id="sv-soil-temp">23</span><span class="sensor-unit">°C</span></div></div>
+        <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Air Humidity</div><div class="sensor-loc">DHT22</div></div><div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-hum" style="width:71%;background:var(--sky)"></div></div><div class="sensor-val-wrap"><span class="sensor-val" id="sv-hum">71</span><span class="sensor-unit">%</span></div></div>
+        <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">EC (Conductivity)</div><div class="sensor-loc">Nutrient proxy</div></div><div class="sensor-bar-wrap"><div class="sensor-bar" id="bar-ec" style="width:60%;background:var(--purple)"></div></div><div class="sensor-val-wrap"><span class="sensor-val" id="sv-ec">1.80</span><span class="sensor-unit">dS/m</span></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">SCI COMPONENT BREAKDOWN</div>
+        <div style="margin-top:8px;">
+          <div class="sci-component"><div class="sci-comp-name">Moisture Stability</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-bar-1" style="width:72%;background:var(--leaf)"></div></div><div class="sci-comp-val" id="sci-val-1">72</div></div>
+          <div class="sci-component"><div class="sci-comp-name">Recovery Efficiency</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-bar-2" style="width:55%;background:var(--amber)"></div></div><div class="sci-comp-val" id="sci-val-2">55</div></div>
+          <div class="sci-component"><div class="sci-comp-name">Saturation Persistence</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-bar-3" style="width:56%;background:var(--amber)"></div></div><div class="sci-comp-val" id="sci-val-3">56</div></div>
+          <div class="sci-component"><div class="sci-comp-name">Root-Zone Stability</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-bar-4" style="width:62%;background:var(--leaf)"></div></div><div class="sci-comp-val" id="sci-val-4">62</div></div>
+        </div>
+        <div style="margin-top:12px;padding:9px;background:rgba(46,168,98,0.05);border-radius:8px;border:1px solid rgba(46,168,98,0.1);">
+          <div style="font-family:var(--font-mono);font-size:8px;color:var(--mist);opacity:0.35;margin-bottom:4px;">SCI FORMULA (weighted composite)</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--leaf);">SCI = 0.30(MSI) + 0.25(REI) + 0.20(SPI) + 0.25(RSD)</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--cream);margin-top:4px;opacity:0.7;">= <strong style="color:var(--leaf);" id="sci-formula-val">61</strong></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">DRYING RATE</div>
+        <div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--amber);margin:8px 0 4px;" id="drying-rate-label">Moderate</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--mist);opacity:0.45;margin-bottom:12px;">~3.2% FC/day</div>
+        <div class="why-box">
+          <div class="why-label">Why this rate</div>
+          Sandy Clay Loam + moderate ETI + Kc 1.1 = 3.2% FC/day. No urgency modifier applied. Soil moisture should last ~14 hours before reaching optimal lower bound.
+        </div>
+        <div style="margin-top:14px;">
+          <div class="card-label">STRESS TRACKER</div>
+          <div style="margin-top:8px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:11px;color:var(--cream);opacity:0.7;">Drought hours</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--amber);" id="stress-hours">0.0h / 72h</span></div>
+            <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin-bottom:8px;"><div id="stress-bar" style="height:100%;width:0%;background:var(--amber);border-radius:2px;transition:width 0.8s;"></div></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:11px;color:var(--cream);opacity:0.7;">Saturation hours</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--crimson);" id="sat-hours">6.2h / 72h</span></div>
+            <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;"><div id="sat-bar" style="height:100%;width:8%;background:var(--crimson);border-radius:2px;transition:width 0.8s;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div><!-- /expert-only -->
+</div><!-- /dashboard -->
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: LIVE SENSORS
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-sensors">
+  <div class="page-header">
+    <div>
+      <div class="page-header-title" data-tkey="nav_sensors">Live Sensors</div>
+      <div class="page-header-sub">CAPACITIVE + DS18B20 + DHT22 + EC · SIMULATED PIPELINE</div>
+    </div>
+    <div class="live-badge" style="font-size:10px;padding:6px 12px;">● LIVE</div>
+  </div>
+  <div class="grid-3">
+    <div class="card" style="text-align:center;">
+      <div class="card-label">SOIL MOISTURE — 10cm</div>
+      <div class="ring-gauge"><canvas id="ring-m1-canvas" width="130" height="130"></canvas><div class="ring-center"><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--cream);" id="ring-m1-val">62%</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--fog);">Field Cap.</div></div></div>
+      <div class="why-box" style="text-align:left;margin-top:8px;"><div class="why-label">Reading interpretation</div><span id="ring-m1-why">Loading…</span></div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="card-label">SOIL MOISTURE — 20cm</div>
+      <div class="ring-gauge"><canvas id="ring-m2-canvas" width="130" height="130"></canvas><div class="ring-center"><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--cream);" id="ring-m2-val">58%</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--fog);">Field Cap.</div></div></div>
+      <div class="why-box" style="text-align:left;margin-top:8px;"><div class="why-label">Depth comparison</div>A smaller value at 20cm than 10cm indicates water has not yet penetrated the deeper root zone. Normal for sandy clay loam after moderate irrigation.</div>
+    </div>
+    <div class="card" style="text-align:center;">
+      <div class="card-label">AIR HUMIDITY</div>
+      <div class="ring-gauge"><canvas id="ring-hum-canvas" width="130" height="130"></canvas><div class="ring-center"><div style="font-family:var(--font-head);font-size:24px;font-weight:800;color:var(--cream);" id="ring-hum-val">71%</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--fog);">Humidity</div></div></div>
+      <div class="why-box" style="text-align:left;margin-top:8px;"><div class="why-label">Humidity and ET</div>High humidity reduces evapotranspiration demand. Above 70% RH, ETI typically stays in the moderate range — good for crop water efficiency.</div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">DEPTH COMPARISON — 10cm vs 20cm</div>
+      <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--leaf)"></div>10cm</div><div class="legend-item"><div class="legend-dot" style="background:var(--sky)"></div>20cm</div></div>
+      <div class="chart-wrap" style="height:180px;"><canvas id="dual-moisture-chart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-label">EC (ELECTRICAL CONDUCTIVITY)</div>
+      <div class="chart-wrap" style="height:120px;"><canvas id="ec-chart"></canvas></div>
+      <div class="why-box" style="margin-top:10px;"><div class="why-label">Why EC matters</div>EC is a nutrient proxy. A drop of &gt;20% post-irrigation means fertiliser has leached below the root zone. Current EC: <strong style="color:var(--leaf);" id="ec-display">1.80 dS/m</strong></div>
+      <div class="sensor-row" style="margin-top:10px;"><div class="sensor-info"><div class="sensor-name">Soil Temperature (DS18B20)</div></div><div class="sensor-val-wrap"><span class="sensor-val" id="sv-temp2">23</span><span class="sensor-unit">°C</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: DIAGNOSTICS
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-diagnostics">
+  <div class="page-header">
+    <div>
+      <div class="page-header-title" data-tkey="nav_diagnostics">Diagnostics</div>
+      <div class="page-header-sub">MULTI-FACTOR · CROP-SPECIFIC · SOIL-ADJUSTED · PREDICTIVE</div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div id="diagnostics-list"></div>
+    <div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-label">ESCALATION FRAMEWORK</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+          <div style="padding:11px;border-radius:9px;background:rgba(46,168,98,0.07);border:1px solid rgba(46,168,98,0.14);"><div style="font-family:var(--font-mono);font-size:9px;color:var(--leaf);font-weight:700;margin-bottom:4px;">● LEVEL 1 — EARLY WARNING</div><div style="font-size:11px;color:var(--mist);opacity:0.65;line-height:1.5;">Moisture approaching lower threshold. Monitor closely — no immediate action required.</div></div>
+          <div style="padding:11px;border-radius:9px;background:rgba(245,166,35,0.07);border:1px solid rgba(245,166,35,0.18);"><div style="font-family:var(--font-mono);font-size:9px;color:var(--amber);font-weight:700;margin-bottom:4px;">● LEVEL 2 — ACTIVE STRESS</div><div style="font-size:11px;color:var(--mist);opacity:0.65;line-height:1.5;">Moisture below threshold + moderate drying rate. Irrigation recommended within 6 hours.</div></div>
+          <div style="padding:11px;border-radius:9px;background:rgba(224,52,52,0.07);border:2px solid rgba(224,52,52,0.22);"><div style="font-family:var(--font-mono);font-size:9px;color:var(--crimson);font-weight:700;margin-bottom:4px;">● LEVEL 3 — SEVERE RISK</div><div style="font-size:11px;color:var(--mist);opacity:0.65;line-height:1.5;">Below threshold + rapid drying + critical crop stage. Emergency irrigation — act now.</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">STRESS DURATION TRACKER</div>
+        <div style="margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;color:var(--cream);opacity:0.78;">Drought stress</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--amber);" id="stress-hours2">0.0h</span></div>
+          <div style="height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;margin-bottom:10px;"><div id="stress-bar2" style="height:100%;width:0%;background:var(--amber);border-radius:3px;transition:width 0.8s;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:12px;color:var(--cream);opacity:0.78;">Saturation time</span><span style="font-family:var(--font-mono);font-size:10px;color:var(--crimson);" id="sat-hours2">6.2h</span></div>
+          <div style="height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;"><div id="sat-bar2" style="height:100%;width:8%;background:var(--crimson);border-radius:3px;transition:width 0.8s;"></div></div>
+          <div style="margin-top:12px;padding:9px;background:rgba(0,0,0,0.18);border-radius:7px;font-family:var(--font-mono);font-size:9px;color:var(--mist);opacity:0.45;line-height:1.7;">Yield formula: base_loss + (stress_days × 2) · cap 30% · reproductive stage ×1.5</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: SCI
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-sci">
+  <div class="page-header"><div><div class="page-header-title" data-tkey="nav_sci">Soil Capital Index</div><div class="page-header-sub">4-PROXY COMPOSITE · SAIDA MODULE · SCIENTIFICALLY ESTIMATED</div></div></div>
+  <div class="grid-12">
+    <div class="card" style="text-align:center;">
+      <div class="card-label">CURRENT SCI SCORE</div>
+      <div class="sci-gauge">
+        <svg viewBox="0 0 180 90">
+          <path d="M 20 90 A 70 70 0 0 1 160 90" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="12" stroke-linecap="round"/>
+          <path d="M 20 90 A 70 70 0 0 1 80 22"  fill="none" stroke="rgba(224,52,52,0.28)"  stroke-width="12" stroke-linecap="round"/>
+          <path d="M 80 22 A 70 70 0 0 1 140 35" fill="none" stroke="rgba(245,166,35,0.28)" stroke-width="12" stroke-linecap="round"/>
+          <path d="M 140 35 A 70 70 0 0 1 160 90" fill="none" stroke="rgba(46,168,98,0.28)"  stroke-width="12" stroke-linecap="round"/>
+          <line id="sci-needle" x1="90" y1="90" x2="90" y2="28" stroke="var(--cream)" stroke-width="2.5" stroke-linecap="round" transform="rotate(-28, 90, 90)"/>
+          <circle cx="90" cy="90" r="4" fill="var(--leaf)"/>
+        </svg>
+        <div class="sci-center"><div class="sci-val" id="sci-big">61</div><div class="sci-lbl">/ 100</div></div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--amber);font-weight:700;margin-bottom:12px;" id="sci-class-label">MEDIUM CLASSIFICATION</div>
+      <div class="why-box warning"><div class="why-label">What this means for your farm</div><span id="sci-why-text-full">SCI 61/100 — moderate water retention. Sustained good irrigation can reach HIGH (70+) this season.</span></div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-label">FOUR PROXY INDICATORS</div>
+        <div style="margin-top:8px;">
+          <div class="sci-component"><div class="sci-comp-name">Moisture Stability Index</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-p1-bar" style="width:72%;background:var(--leaf)"></div></div><div class="sci-comp-val" id="sci-p1-val">72</div></div>
+          <div class="why-box" style="margin-top:2px;margin-bottom:10px;font-size:10px;">σ of 7-day moisture window. Low fluctuation = high soil resilience.</div>
+          <div class="sci-component"><div class="sci-comp-name">Recovery Efficiency</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-p2-bar" style="width:55%;background:var(--amber)"></div></div><div class="sci-comp-val" id="sci-p2-val">55</div></div>
+          <div class="why-box warning" style="margin-top:2px;margin-bottom:10px;font-size:10px;">Time to return to optimal band after irrigation. Slow recovery = compaction or poor infiltration.</div>
+          <div class="sci-component"><div class="sci-comp-name">Saturation Persistence</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-p3-bar" style="width:56%;background:var(--amber)"></div></div><div class="sci-comp-val" id="sci-p3-val">56</div></div>
+          <div class="why-box warning" style="margin-top:2px;margin-bottom:10px;font-size:10px;">Duration &gt;90% FC (inverted). Extended saturation = poor aeration capacity.</div>
+          <div class="sci-component"><div class="sci-comp-name">Root-Zone Stability</div><div class="sci-comp-bar-wrap"><div class="sci-comp-bar" id="sci-p4-bar" style="width:62%;background:var(--leaf)"></div></div><div class="sci-comp-val" id="sci-p4-val">62</div></div>
+          <div class="why-box" style="margin-top:2px;margin-bottom:4px;font-size:10px;">Days within optimal moisture band. More stable days = higher soil capital rating.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="card"><div class="card-label">SCI TREND — 72 HOURS</div><div class="chart-wrap" style="height:160px;"><canvas id="sci-trend-chart"></canvas></div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: RECOMMENDATIONS
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-recommendations">
+  <div class="page-header"><div><div class="page-header-title" data-tkey="nav_recommendations">Recommendations</div><div class="page-header-sub" id="rec-sub">CROP-SPECIFIC · SOIL-ADJUSTED · CLIMATE-AWARE</div></div></div>
+  <div class="grid-2">
+    <div id="rec-list"></div>
+    <div>
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-label">EXPECTED OUTCOME IF FOLLOWED</div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;color:var(--cream);opacity:0.72;">Yield loss risk</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--leaf);">14% → ~6%</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;color:var(--cream);opacity:0.72;">SCI improvement</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--leaf);">+4–8 pts</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;color:var(--cream);opacity:0.72;">Water saving</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--leaf);">~25%</span></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12px;color:var(--cream);opacity:0.72;">Leaching reduction</span><span style="font-family:var(--font-mono);font-size:13px;color:var(--leaf);">~40%</span></div>
+        </div>
+        <div class="why-box" style="margin-top:12px;"><div class="why-label">How these are calculated</div>Based on SmartSoil+ yield-loss formula: base_loss + (stress_days × 2), cap 30%. Projections assume full adherence to the 7-day irrigation plan.</div>
+      </div>
+      <div class="card">
+        <div class="card-label">IRRIGATION LOG — RECENT</div>
+        <table class="data-table" style="margin-top:8px;">
+          <tr><th>TIME</th><th>DURATION</th><th>OUTCOME</th></tr>
+          <tr><td style="font-family:var(--font-mono);font-size:10px;">06:00 today</td><td>45 min</td><td><span class="tag tag-red">Over-irr.</span></td></tr>
+          <tr><td style="font-family:var(--font-mono);font-size:10px;">06:00 –1d</td><td>40 min</td><td><span class="tag tag-amber">Borderline</span></td></tr>
+          <tr><td style="font-family:var(--font-mono);font-size:10px;">06:00 –2d</td><td>35 min</td><td><span class="tag tag-green">Optimal</span></td></tr>
+          <tr><td style="font-family:var(--font-mono);font-size:10px;">06:00 –3d</td><td>35 min</td><td><span class="tag tag-green">Optimal</span></td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: YIELD
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-yield">
+  <div class="page-header"><div><div class="page-header-title" data-tkey="nav_yield">Yield Analysis</div><div class="page-header-sub">FORMULA-DRIVEN · STRESS ATTRIBUTION · STAGE-AWARE</div></div></div>
+  <div class="grid-4">
+    <div class="card status-danger"><div class="card-label">CURRENT YIELD RISK</div><div class="card-value" id="yield-risk-big" style="color:var(--crimson)">14<span style="font-size:18px">%</span></div><div class="card-sub">Estimated vs max potential</div><div class="why-box danger"><div class="why-label">Formula</div>base(10) + stress_days(2)×2 = 14. Stage multiplier ×1.5 if reproductive.</div></div>
+    <div class="card status-warning"><div class="card-label">PRIMARY CAUSE</div><div class="card-value" style="font-size:18px;color:var(--amber);" id="yield-cause-detail">Over-irr.</div><div class="why-box warning"><div class="why-label">Why this causes loss</div>Tomato in fruit set: excess moisture causes fruit cracking, disease entry, 10–15% quality decline.</div></div>
+    <div class="card"><div class="card-label">EC LEACHING RISK</div><div class="card-value" style="font-size:18px;color:var(--ice);">18% drop</div><div class="why-box"><div class="why-label">Why this matters</div>Nutrients below root zone = less uptake = smaller fruits, lower market value.</div></div>
+    <div class="card status-ok"><div class="card-label">RISK IF OPTIMISED</div><div class="card-value" style="color:var(--leaf);">6<span style="font-size:18px">%</span></div><div class="card-sub">Following 7-day plan</div><div class="why-box"><div class="why-label">How</div>Reduced saturation + split irrigation brings risk to 6% — residual from prior stress.</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card"><div class="card-label" id="yield-plot-label">PLOT A (SmartSoil+) vs PLOT B (Unguided)</div><div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--leaf)"></div>Plot A — Guided</div><div class="legend-item"><div class="legend-dot" style="background:var(--crimson)"></div>Plot B — Control</div></div><div class="chart-wrap" style="height:200px;"><canvas id="yield-chart"></canvas></div><div class="why-box" style="margin-top:10px;"><div class="why-label">What this shows</div>Without SmartSoil+ guidance, Plot B accumulates ~22% yield risk over 30 days. Plot A stays below 15% and declining.</div></div>
+    <div class="card"><div class="card-label">CROP STRESS THRESHOLDS — REFERENCE</div><div id="crop-thresholds-table" style="margin-top:10px;"></div></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: CLIMATE & ET
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-climate">
+  <div class="page-header"><div><div class="page-header-title" data-tkey="nav_climate">Climate &amp; ET</div><div class="page-header-sub">ETI FRAMEWORK · PREDICTIVE STRESS · Kc INTEGRATION · CLIMATE MODULE</div></div></div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-label">ET DEMAND INDEX (ETI)</div>
+      <div style="font-family:var(--font-head);font-size:40px;font-weight:800;color:var(--amber);line-height:1;margin:10px 0 4px;" id="eti-val">54</div>
+      <div style="font-family:var(--font-mono);font-size:9px;font-weight:700;" id="eti-class">CATEGORY 2 — MODERATE</div>
+      <div class="eti-bar" style="margin-top:14px;"><div class="eti-needle" id="eti-needle" style="left:54%"></div></div>
+      <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:8px;color:var(--fog);opacity:0.45;margin-bottom:10px;"><span>Low</span><span>Moderate</span><span>High</span></div>
+      <div class="why-box"><div class="why-label">What ETI means</div><span id="eti-why-text">Loading…</span></div>
+    </div>
+    <div class="card">
+      <div class="card-label">CLIMATE CONDITIONS</div>
+      <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Air Temperature</div></div><div class="sensor-val-wrap"><span class="sensor-val" id="clim-temp" style="color:var(--amber);">28</span><span class="sensor-unit">°C</span></div></div>
+      <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Relative Humidity</div></div><div class="sensor-val-wrap"><span class="sensor-val" id="clim-hum" style="color:var(--sky);">72</span><span class="sensor-unit">%</span></div></div>
+      <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">Humidity Deficit</div></div><div class="sensor-val-wrap"><span class="sensor-val" id="clim-hd" style="color:var(--mist);">28</span><span class="sensor-unit">%</span></div></div>
+      <div class="sensor-row"><div class="sensor-info"><div class="sensor-name">High-ETI Streak</div></div><div class="sensor-val-wrap"><span style="font-family:var(--font-mono);font-size:16px;color:var(--leaf);" id="eti-streak">0</span><span class="sensor-unit">ticks</span></div></div>
+    </div>
+    <div class="card">
+      <div class="card-label">CROP COEFFICIENT (Kc)</div>
+      <div id="kc-display" style="margin-top:10px;">Loading…</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">TEMPERATURE &amp; HUMIDITY — 72H</div>
+    <div class="chart-legend"><div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Temperature (°C)</div><div class="legend-item"><div class="legend-dot" style="background:var(--sky)"></div>Humidity (%)</div></div>
+    <div class="chart-wrap" style="height:180px;"><canvas id="temp-hum-chart"></canvas></div>
+    <div class="why-box" style="margin-top:10px;"><div class="why-label">Predictive stress model</div>When ETI reaches HIGH and moisture approaches the lower threshold during a critical crop stage, SmartSoil+ generates a pre-stress advisory — acting before yield damage occurs, not after.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: ARCHITECTURE
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-architecture">
+  <div class="page-header"><div><div class="page-header-title" data-tkey="nav_architecture">System Architecture</div><div class="page-header-sub">SMARTSOIL+ PLATFORM · UDSM PROTOTYPE · PHASE 1 MVP</div></div></div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-label">FULL SYSTEM DIAGRAM — 4 LAYERS</div>
+    <div style="margin-top:14px;">
+      <div class="arch-layer" style="background:rgba(26,122,74,0.07);border-color:rgba(46,168,98,0.18);">
+        <div class="arch-layer-title" style="color:var(--leaf);">🌱 LAYER 1 — PHYSICAL / FIELD SENSORS</div>
+        <div class="grid-4">
+          <div class="arch-box"><div class="arch-box-title">Capacitive Moisture</div><div class="arch-box-sub">A1 (10cm) · A2 (20cm) · 0–3.3V → %FC via calibration</div></div>
+          <div class="arch-box"><div class="arch-box-title">DS18B20 Temperature</div><div class="arch-box-sub">Soil temp · Digital · ±0.5°C accuracy</div></div>
+          <div class="arch-box"><div class="arch-box-title">DHT22 Humidity/Temp</div><div class="arch-box-sub">Air humidity + temp above canopy · 0–100% RH</div></div>
+          <div class="arch-box"><div class="arch-box-title">EC Sensor</div><div class="arch-box-sub">Nutrient leaching proxy · dS/m units</div></div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓ ADC / Voltage → %FC conversion</div>
+      <div class="arch-layer" style="background:rgba(43,127,212,0.06);border-color:rgba(43,127,212,0.18);">
+        <div class="arch-layer-title" style="color:var(--sky);">⚙️ LAYER 2 — ICT PROCESSING ENGINE (simulation.js + diagnostics.js)</div>
+        <div class="grid-3">
+          <div class="arch-box"><div class="arch-box-title">Sensor Pipeline</div><div class="arch-box-sub">Trend-based simulation. Future: ESP32 → Firebase → ingestSensorReading()</div></div>
+          <div class="arch-box"><div class="arch-box-title">Multi-Factor Diagnostics</div><div class="arch-box-sub">moisture + duration + soil + ETI + crop stage + stress history → intelligent alerts</div></div>
+          <div class="arch-box"><div class="arch-box-title">SCI Engine</div><div class="arch-box-sub">4 proxies × weights → composite score. Updated every simulation tick.</div></div>
+          <div class="arch-box"><div class="arch-box-title">ETI Calculator</div><div class="arch-box-sub">temp(50%) + humidity deficit(35%) + radiation proxy(15%) → 0–100 index</div></div>
+          <div class="arch-box"><div class="arch-box-title">Drying Rate Model</div><div class="arch-box-sub">base_soil_rate × ETI_modifier × Kc → %FC/day. Drives irrigation urgency.</div></div>
+          <div class="arch-box"><div class="arch-box-title">Yield Risk Formula</div><div class="arch-box-sub">base + (stress_days × 2) · cap 30% · reproductive ×1.5 · ETI streak ×1.3</div></div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓ Agronomic Knowledge Modifiers</div>
+      <div class="arch-layer" style="background:rgba(245,166,35,0.05);border-color:rgba(245,166,35,0.18);">
+        <div class="arch-layer-title" style="color:var(--sun);">📚 LAYER 3 — AGRONOMIC KNOWLEDGE BASE (config.js + crops.js)</div>
+        <div class="grid-3">
+          <div class="arch-box"><div class="arch-box-title">Crop Profiles (Damian)</div><div class="arch-box-sub">MAZ01, TOM01, ONI01 · FC ranges, Kc stages, stress thresholds, yield loss rules</div></div>
+          <div class="arch-box"><div class="arch-box-title">Soil Classes (Saida)</div><div class="arch-box-sub">SOIL01–05 · Field capacity, drainage, drying rate, waterlog tolerance, crop modifiers</div></div>
+          <div class="arch-box"><div class="arch-box-title">Tanzania Rules</div><div class="arch-box-sub">Semi-arid ETo &gt;6mm → −10% FC threshold · EC leaching detection · Rainfall averaging</div></div>
+        </div>
+      </div>
+      <div class="arch-arrow">↓ UI Rendering</div>
+      <div class="arch-layer" style="background:rgba(155,89,182,0.06);border-color:rgba(155,89,182,0.18);">
+        <div class="arch-layer-title" style="color:var(--lilac, #C39BD3);">📱 LAYER 4 — USER INTERFACE (app.js + charts.js + styles.css)</div>
+        <div class="grid-4">
+          <div class="arch-box"><div class="arch-box-title">Expert Mode</div><div class="arch-box-sub">Full analytics, charts, SCI breakdown, ETI, formulas, sensor pipeline</div></div>
+          <div class="arch-box"><div class="arch-box-title">Farmer Mode</div><div class="arch-box-sub">Simple colour cards, plain language, Swahili/English, action-first UX</div></div>
+          <div class="arch-box"><div class="arch-box-title">Bilingual Engine</div><div class="arch-box-sub">Full EN ↔ SW via translations.js. Every label, alert, and explanation translates live.</div></div>
+          <div class="arch-box"><div class="arch-box-title">Predictive Advisories</div><div class="arch-box-sub">Pre-stress alerts before threshold breach. Climate + crop + soil integrated.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">FILE STRUCTURE</div>
+      <div style="font-family:var(--font-mono);font-size:10px;line-height:2.2;color:var(--mist);opacity:0.7;margin-top:8px;">
+        <div style="color:var(--leaf);">smartsoil/</div>
+        <div>  index.html         <span style="opacity:0.45;">← Master HTML shell</span></div>
+        <div>  styles.css         <span style="opacity:0.45;">← Mobile-first CSS</span></div>
+        <div>  config.js          <span style="opacity:0.45;">← All constants &amp; thresholds</span></div>
+        <div>  translations.js    <span style="opacity:0.45;">← EN + SW strings</span></div>
+        <div>  simulation.js      <span style="opacity:0.45;">← Realistic sensor engine</span></div>
+        <div>  diagnostics.js     <span style="opacity:0.45;">← Multi-factor diagnostics</span></div>
+        <div>  charts.js          <span style="opacity:0.45;">← Canvas chart renderer</span></div>
+        <div>  app.js             <span style="opacity:0.45;">← UI controller</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">ESP32 INTEGRATION ROADMAP (PHASE 2)</div>
+      <div style="font-family:var(--font-mono);font-size:10px;line-height:2;color:var(--mist);opacity:0.65;margin-top:8px;">
+        <div>1. Flash ESP32 with sensor firmware</div>
+        <div style="color:var(--leaf);">   → moisture · temp · humidity · EC</div>
+        <div>2. Connect to Firebase Realtime DB</div>
+        <div style="color:var(--leaf);">   → sensors/plotA/{moisture, temp, ec}</div>
+        <div>3. Replace SIM tick() with listener:</div>
+        <div style="color:var(--leaf);">   → dbRef.on('value', ingestSensorReading)</div>
+        <div>4. Set SYS.sensorMode = 'LIVE_ESP32'</div>
+        <div style="color:var(--leaf);">   → removes prototype banner</div>
+        <div>5. All diagnostics, SCI, yield risk run live</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: ABOUT
+═══════════════════════════════════════════════ -->
+<div class="page" id="page-about">
+  <div class="about-hero">
+    <div style="font-size:48px;margin-bottom:14px;">🌱</div>
+    <h1>SmartSoil<em>+</em></h1>
+    <p>An intelligent soil–water platform built for Tanzanian smallholder and commercial agriculture. Combining agronomic knowledge, rule-based intelligence, and predictive simulation to protect every harvest.</p>
+  </div>
+  <div class="innovation-grid">
+    <div class="innovation-card"><div class="innovation-num">01</div><div class="innovation-title">Crop-Specific Intelligence</div><div class="innovation-desc">Unique threshold profiles for maize, tomato, and onion. Growth-stage aware stress detection with dynamic Kc integration per crop day.</div></div>
+    <div class="innovation-card"><div class="innovation-num">02</div><div class="innovation-title">Soil Capital Index</div><div class="innovation-desc">Four proxy indicators replace expensive lab tests. Farmers receive a 0–100 score driven by moisture stability, recovery, saturation, and root-zone consistency.</div></div>
+    <div class="innovation-card"><div class="innovation-num">03</div><div class="innovation-title">Bilingual Intelligence</div><div class="innovation-desc">Full English–Kiswahili translation. Every alert, diagnostic, recommendation, and WHY explanation translates live. No farmer is excluded by language.</div></div>
+    <div class="innovation-card"><div class="innovation-num">04</div><div class="innovation-title">Farmer / Expert Mode</div><div class="innovation-desc">Judges and agronomists see full analytics. Farmers see simple colour-coded actions in plain language. One platform, two audiences, zero confusion.</div></div>
+    <div class="innovation-card"><div class="innovation-num">05</div><div class="innovation-title">Predictive Stress Alerts</div><div class="innovation-desc">Acts BEFORE yield damage occurs. Climate module detects high-ETI + critical-stage combination and generates pre-stress advisories — not reactive alerts.</div></div>
+    <div class="innovation-card"><div class="innovation-num">06</div><div class="innovation-title">WHY Explanations</div><div class="innovation-desc">No reading is unexplained. "Moisture at 41% FC is below the 50% drought threshold for Tomato during Fruit Set — stomatal closure begins within hours."</div></div>
+  </div>
+  <div class="card" style="margin-bottom:16px;">
+    <div class="proto-banner-title" id="proto-title-about" style="font-family:var(--font-mono);font-size:9px;color:var(--amber);font-weight:700;letter-spacing:1px;margin-bottom:8px;">⚗ PROTOTYPE SIMULATION MODE — FULL DISCLOSURE</div>
+    <div style="font-size:12px;color:var(--mist);opacity:0.65;line-height:1.8;" id="proto-body-about">This application uses a rule-based agronomic simulation engine — not live sensor data. All readings are scientifically modelled from FAO/CGIAR crop parameters, Damian's crop profiles, and Saida's soil hydraulics. Diagnostics are experimental estimates. Live ESP32 sensor integration is planned for Phase 2.</div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-label">TEAM MODULE ATTRIBUTION</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+        <div style="padding:12px;border-radius:9px;background:rgba(46,168,98,0.07);border:1px solid rgba(46,168,98,0.14);"><div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cream);">Damian — Agriculture Module</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">Crop water demand, stress thresholds, yield-loss assumptions (MAZ01, TOM01, ONI01), Tanzania-specific rules, Kc coefficients by growth stage</div></div>
+        <div style="padding:12px;border-radius:9px;background:rgba(43,127,212,0.07);border:1px solid rgba(43,127,212,0.18);"><div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cream);">Saida — Soil Hydraulic Module</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">Soil classification (SOIL01–05), drying rate categories, SCI proxy framework, soil–crop interaction modifiers, waterlogging tolerance</div></div>
+        <div style="padding:12px;border-radius:9px;background:rgba(245,166,35,0.06);border:1px solid rgba(245,166,35,0.18);"><div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cream);">Climate Module</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">ETI classification, Kc stage integration, predictive stress modelling, climate–soil–crop interaction logic, diurnal cycle simulation</div></div>
+        <div style="padding:12px;border-radius:9px;background:rgba(155,89,182,0.07);border:1px solid rgba(155,89,182,0.18);"><div style="font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--cream);">ICT Module</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">Platform architecture, realistic simulation engine, multi-factor diagnostics, bilingual UI, mobile-first design, sensor ingestion abstraction</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-label">FUTURE ROADMAP</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">
+        <div style="padding:10px;border-radius:8px;background:rgba(46,168,98,0.06);border:1px solid rgba(46,168,98,0.1);"><div style="font-family:var(--font-mono);font-size:9px;color:var(--leaf);font-weight:700;">PHASE 2 — LIVE SENSORS</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">ESP32 firmware · Firebase Realtime DB · MQTT broker · Live calibration · OTA updates</div></div>
+        <div style="padding:10px;border-radius:8px;background:rgba(43,127,212,0.06);border:1px solid rgba(43,127,212,0.12);"><div style="font-family:var(--font-mono);font-size:9px;color:var(--sky);font-weight:700;">PHASE 3 — SCALE</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">Multi-plot support · GIS / satellite NDVI · Irrigation ROI calculator · Water efficiency scoring · Loan-risk insights</div></div>
+        <div style="padding:10px;border-radius:8px;background:rgba(155,89,182,0.06);border:1px solid rgba(155,89,182,0.12);"><div style="font-family:var(--font-mono);font-size:9px;color:var(--lilac, #C39BD3);font-weight:700;">PHASE 4 — AI</div><div style="font-size:11px;color:var(--mist);opacity:0.6;margin-top:3px;line-height:1.5;">AI agronomy assistant · Predictive seasonal models · Historical yield database · Integration with Tanzania agricultural APIs</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  </main><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════
+     SCRIPTS — Load order matters
+     config → translations → simulation → diagnostics → charts → app
+═══════════════════════════════════════════════ -->
+<script src="config.js"></script>
+<script src="translations.js"></script>
+<script src="simulation.js"></script>
+<script src="diagnostics.js"></script>
+<script src="charts.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
